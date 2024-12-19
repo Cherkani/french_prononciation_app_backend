@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prononciation Française</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 50px;
+      }
+      #sentence {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      #startRecordButton,
+      #stopRecordButton {
+        padding: 10px 20px;
+        font-size: 18px;
+        cursor: pointer;
+      }
+      #stopRecordButton {
+        display: none;
+      }
+      #feedback {
+        margin-top: 20px;
+        font-size: 18px;
+      }
+      #recognizedText,
+      #correctText,
+      #comparison {
+        margin-top: 10px;
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="sentence">Cliquez sur "Obtenir une phrase" pour commencer</div>
+    <button id="getSentenceButton">Obtenir une phrase</button>
+    <button id="startRecordButton" disabled>Commencer l'enregistrement</button>
+    <button id="stopRecordButton" disabled>Arrêter l'enregistrement</button>
+    <div id="feedback"></div>
+    <div id="recognizedText"></div>
+    <div id="correctText"></div>
+    <div id="comparison"></div>
+
+    <script>
+      let selectedSentence = "";
+      let isRecording = false;
+      let recognition;
+      let audioText = "";
+
+      // Vérifiez si l'API de reconnaissance vocale est disponible
+      if (!("webkitSpeechRecognition" in window)) {
+        alert("Désolé, votre navigateur ne supporte pas l'API Web Speech.");
+      } else {
+        recognition = new webkitSpeechRecognition();
+        recognition.lang = "fr-FR"; // Définir la langue sur le français
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onresult = function (event) {
+          // Récupérer le texte transcrit à partir de l'événement
+          audioText = event.results[0][0].transcript.trim().toLowerCase();
+          document.getElementById(
+            "recognizedText"
+          ).innerText = `Texte reconnu : ${audioText}`;
+        };
+
+        recognition.onerror = function (event) {
+          alert("Erreur lors de la reconnaissance vocale : " + event.error);
+        };
+      }
+
+      // Obtenir une phrase aléatoire depuis le serveur
+      document
+        .getElementById("getSentenceButton")
+        .addEventListener("click", async () => {
+          const response = await fetch("/get_sentence");
+          const data = await response.json();
+          selectedSentence = data.sentence;
+          document.getElementById("sentence").innerText = selectedSentence;
+          document.getElementById("startRecordButton").disabled = false;
+        });
+
+      // Démarrer l'enregistrement vocal
+      document
+        .getElementById("startRecordButton")
+        .addEventListener("click", () => {
+          recognition.start();
+          document.getElementById("startRecordButton").disabled = true;
+          document.getElementById("stopRecordButton").disabled = false;
+          document.getElementById("stopRecordButton").style.display =
+            "inline-block";
+        });
+
+      // Arrêter l'enregistrement vocal
+      document
+        .getElementById("stopRecordButton")
+        .addEventListener("click", () => {
+          recognition.stop();
+          document.getElementById("stopRecordButton").disabled = true;
+
+          // Comparer le texte reconnu avec la phrase cible après un léger délai pour s'assurer que la reconnaissance est terminée
+          setTimeout(compareText, 500);
+        });
+
+      // Fonction de normalisation du texte
+      function normalizeText(text) {
+        return text
+          .normalize("NFD") // Normaliser les caractères accentués
+          .replace(/[\u0300-\u036f]/g, "") // Supprimer les diacritiques
+          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "") // Supprimer la ponctuation
+          .replace(/\s{2,}/g, " ") // Remplacer les espaces multiples par un seul espace
+          .trim()
+          .toLowerCase();
+      }
+
+      // Comparaison du texte reconnu avec la phrase cible
+      function compareText() {
+        const recognizedText = normalizeText(audioText);
+        const referenceText = normalizeText(selectedSentence);
+        let feedback = [];
+        let match = recognizedText === referenceText;
+
+        if (match) {
+          feedback.push("Bravo, la phrase correspond !");
+        } else {
+          feedback.push(
+            `La phrase ne correspond pas. Vous avez dit : "${recognizedText}", mais la phrase correcte est : "${referenceText}".`
+          );
+        }
+
+        document.getElementById(
+          "correctText"
+        ).innerText = `Texte correct : ${referenceText}`;
+        document.getElementById("comparison").innerText = feedback.join("\n");
+        document.getElementById("feedback").innerText = match
+          ? "Correspondance : Oui"
+          : "Correspondance : Non";
+        document.getElementById("startRecordButton").disabled = false;
+      }
+    </script>
+  </body>
+</html>
