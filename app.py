@@ -37,13 +37,11 @@ with open('./french_sentences.json', 'r', encoding='utf-8') as f:
 
 @app.route('/')
 def index():
-    return send_from_directory('./template/', 'index.html')
+    return "Welcome to the Pronunciation App"
 
 @app.route('/get_sentence')
 def get_sentence():
-    selected_sentence = random.choice(french_sentences)
-    print(f"Selected sentence: {selected_sentence}")
-    return jsonify({"sentence": selected_sentence})
+    return jsonify({"sentence": random.choice(french_sentences)})
 
 @app.route('/process_audio', methods=['POST'])
 def process_audio():
@@ -75,17 +73,13 @@ def process_audio():
             return jsonify({"error": f"Feedback failed with status {feedback_response.status_code}"}), feedback_response.status_code
         
         feedback_data = feedback_response.json()
-        feedback = feedback_data.get('feedback', [])
-        match = feedback_data.get('match', False)
-
-        # Return the processed results
-        return jsonify({"recognized_text": recognized_text, "feedback": feedback, "match": match})
+        return jsonify(feedback_data)
 
     except Exception as e:
-        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(host='0.0.0.0',port=5000)
 
 # Terminate the services at the end
 for process in processes:

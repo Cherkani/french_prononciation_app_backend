@@ -25,4 +25,4 @@ def transcribe_audio():
         return jsonify({"error": f"Error with the recognition service: {e}"}), 500
 
 if __name__ == "__main__":
-    app.run(port=5002)
+    app.run(host='0.0.0.0',port=5002)

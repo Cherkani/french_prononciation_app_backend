@@ -21,4 +21,4 @@ def record_audio():
     return jsonify({"message": f"Recording saved as {filename}", "filename": filename})
 
 if __name__ == "__main__":
-    app.run(port=5001)
+    app.run(host='0.0.0.0',port=5001)
