@@ -1,0 +1,50 @@
+import json
+import random
+
+def analyze_phrases_difficulty(json_file_path):
+    # Load JSON data
+    with open(json_file_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    
+    # Ensure data is a list of strings
+    if not all(isinstance(phrase, str) for phrase in data):
+        raise ValueError("Data should be a list of strings.")
+    
+    # Ensure there are enough valid phrases to sample
+    if len(data) < 3:
+        raise ValueError("Not enough data to calculate thresholds.")
+    
+    # Get 50% of phrases randomly for analysis
+    sample_size = max(int(len(data) * 0.5), 3)  # Ensure at least 3 phrases
+    sample_size = min(sample_size, len(data))  # Ensure sample size is not larger than population
+    sample_phrases = random.sample(data, sample_size)
+    
+    # Calculate lengths of sampled phrases
+    lengths = [len(phrase) for phrase in sample_phrases]
+    
+    # Ensure there are enough lengths to calculate thresholds
+    if len(lengths) < 3:
+        raise ValueError("Not enough data to calculate thresholds.")
+    
+    # Calculate thresholds using percentiles
+    lengths.sort()
+    third = len(lengths) // 3
+    
+    # Define thresholds for easy, medium, and difficult
+    easy_threshold = lengths[third]  # 33rd percentile
+    medium_threshold = lengths[third * 2]  # 66th percentile
+    
+    # Define length intervals
+    easy_interval = (0, easy_threshold)
+    medium_interval = (easy_threshold + 1, medium_threshold)
+    difficult_interval = (medium_threshold + 1, max(lengths))
+    
+    return easy_interval, medium_interval, difficult_interval
+
+# Exemple d'utilisation
+input_file = 'french_sentences.json'
+try:
+    easy, medium, difficult = analyze_phrases_difficulty(input_file)
+    print(f"Facile: {easy}, Moyen: {medium}, Difficile: {difficult}")
+except ValueError as e:
+    print(e)
