@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y \
     portaudio19-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip --root-user-action=ignore
+RUN pip install -r requirements.txt --root-user-action=ignore
 
 COPY . /app
 
