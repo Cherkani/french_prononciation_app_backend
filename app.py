@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import time
+import threading
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -84,8 +85,21 @@ def process_audio():
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
+def keep_alive():
+    while True:
+        try:
+            requests.get("http://localhost:5000/")
+        except Exception as e:
+            print(f"Keep-alive request failed: {str(e)}")
+        time.sleep(30)
+
 if __name__ == "__main__":
-    app.run(port=5000)
+    # Démarrer le thread keep-alive
+    threading.Thread(target=keep_alive, daemon=True).start()
+    
+    # Utiliser gunicorn pour démarrer l'application en production
+    from gunicorn.app.wsgiapp import run
+    run()
 
 # Terminate the services at the end
 for process in processes:
